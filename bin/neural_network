@@ -1,0 +1,9 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')
+
+require 'myfirstnn'
+
+nn = NeuralNetwork.new
+nn.train(3, 500, 1.0)
+nn.test

@@ -1,0 +1,14 @@
+edu.stanford.nlp:stanford-corenlp:3.6.0:compile:
+com.io7m.xom:xom:1.2.10:compile:
+xml-apis:xml-apis:1.3.03:compile:
+xerces:xercesImpl:2.8.0:compile:
+xalan:xalan:2.7.0:compile:
+joda-time:joda-time:2.9:compile:
+de.jollyday:jollyday:0.4.7:compile:
+javax.xml.bind:jaxb-api:2.2.7:compile:
+com.googlecode.efficient-java-matrix-library:ejml:0.23:compile:
+javax.json:javax.json-api:1.0:compile:
+org.slf4j:slf4j-api:1.7.12:compile:
+org.ejml:simple:0.29:compile:
+org.ejml:core:0.29:compile:
+org.ejml:dense64:0.29:compile:

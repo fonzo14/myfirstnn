@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+
+vocabulary_size = ARGV[0].to_i
+min_count       = ARGV[1].to_i
+count           = Hash.new(0)
+
+stopwords = {
+  '0' => true,
+  '1' => true,
+  '2' => true,
+  '3' => true,
+  '4' => true,
+  '5' => true,
+  '6' => true,
+  '7' => true,
+  '8' => true,
+  '9' => true,
+  '.' => true,
+  'de' => true,
+  ',' => true,
+  'la' => true,
+  'le' => true,
+  'l' => true,
+  'à' => true,
+  ':' => true,
+  '' => true,
+  '...' => true,
+  'a' => true,
+  '``' => true,
+  'du' => true,
+  'les' => true,
+  'en' => true,
+  'et' => true,
+  'd' => true,
+  'des' => true,
+  'pour' => true,
+  'un' => true,
+  'est' => true,
+  'sur' => true,
+  'une' => true,
+  'au' => true,
+  'dans' => true,
+  'son' => true,
+  'il' => true,
+  'pas' => true,
+  'ce' => true,
+  's' => true,
+  'par' => true,
+  'qui' => true,
+  'que' => true,
+  '`' => true,
+  'avec' => true,
+  'se' => true,
+  'n' => true,
+  'sa' => true,
+  'après' => true,
+  'ne' => true,
+  'plus' => true,
+  'qu' => true,
+  '?' => true,
+  'aux' => true,
+  'jusqu' => true,
+  'où' => true,
+  'dit' => true,
+  'déjà' => true,
+  'été' => true,
+  'ont' => true,
+  'ses' => true,
+  'lrb' => true,
+  'rrb' => true
+}
+
+STDIN.each do |w|
+  w = w.chomp
+  if !stopwords.key?(w) && w.size > 1 && w.to_i.zero?
+    count[w] += 1
+  end
+end
+
+sorted_words = count.keys.sort { |w1,w2| count[w2] <=> count[w1] }
+sorted_words.first(vocabulary_size).each_with_index do |w,i|
+  if count[w] >= min_count
+    puts [i+1, w, count[w]].join "\t"
+  end
+end

@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')
+
+require 'myfirstnn'
+
+tokenizer = Tokenizer.new
+
+STDIN.each do |line|
+  words = tokenizer.tokenize(line)
+  words.each do |w|
+    puts w
+  end
+end

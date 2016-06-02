@@ -1,0 +1,19 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    jar-dependencies (0.3.4)
+    rake (11.1.2)
+    ruby-maven (3.3.11)
+      ruby-maven-libs (~> 3.3.9)
+    ruby-maven-libs (3.3.9)
+
+PLATFORMS
+  java
+
+DEPENDENCIES
+  jar-dependencies (= 0.3.4)
+  rake
+  ruby-maven (~> 3.3, >= 3.3.11)
+
+BUNDLED WITH
+   1.12.5
