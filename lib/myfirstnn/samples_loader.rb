@@ -15,9 +15,9 @@ class SamplesLoader
       end.each do |word_id, word_count|
         data.set(word_id, word_count)
       end
-      label = SimpleMatrix.new(1, 2)
+      label = SimpleMatrix.new(2, 1)
       label.set(0, 0, category == 'SPORT' ? 1.0 : 0)
-      label.set(0, 1, category == 'POLITIQUE' ? 1.0 : 0)
+      label.set(1, 0, category == 'POLITIQUE' ? 1.0 : 0)
       samples << Sample.new(data, label)
     end
     puts "load #{samples.size} samples from #{file}"

@@ -1,5 +1,7 @@
 source "https://rubygems.org/"
 
+gem 'multi_json'
+
 group :development do
   gem 'rake'
   gem 'jar-dependencies', '0.3.4'

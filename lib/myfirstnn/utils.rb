@@ -4,14 +4,14 @@ module Utils
       new_matrix(matrix) { |value| java.lang.Math.tanh(value) }
     end
 
-    def sigmoid(matrix)
-      new_matrix(matrix) { |value| (1 / (1 + java.lang.Math.exp(-value))) }
-    end
-
     def softmax(matrix)
       nm  = new_matrix(matrix) { |value| java.lang.Math.exp(value) }
-      sum = nm.elementSum()
+      sum = nm.elementSum().to_f
       new_matrix(nm) { |value| value / sum }
+    end
+
+    def tanh_derivative(matrix)
+      new_matrix(matrix) { |v| 1 - java.lang.Math.tanh(v)**2 }
     end
 
     def new_matrix(matrix)
