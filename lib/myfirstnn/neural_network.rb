@@ -6,12 +6,12 @@ class NeuralNetwork
 
   def initialize(vocabulary_size, hidden_size, output_size)
     # input layer size = vocabulary size
-    @vocabulary_size   = vocabulary_size
     @hidden_layer_size = hidden_size
     @output_layer_size = output_size
 
-    @vocabulary     = Vocabulary.new(1000, 5, File.join(NN_ROOT, 'data', 'vocabulary.txt'))
-    @samples_loader = SamplesLoader.new(@vocabulary, Tokenizer.new)
+    @vocabulary      = Vocabulary.new(vocabulary_size, 5, File.join(NN_ROOT, 'data', 'vocabulary.txt'))
+    @vocabulary_size = @vocabulary.size
+    @samples_loader  = SamplesLoader.new(@vocabulary, Tokenizer.new)
 
     # init the weight and biais
     @w_hidden = SimpleMatrix.random(@hidden_layer_size, @vocabulary.size, -1.0, 1.0, Random.new)
