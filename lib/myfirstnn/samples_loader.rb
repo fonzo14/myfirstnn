@@ -1,6 +1,6 @@
 class SamplesLoader
-  def initialize(vocabulary, tokenizer)
-    @vocabulary = vocabulary
+  def initialize(embeddings, tokenizer)
+    @embeddings = embeddings
     @tokenizer  = tokenizer
   end
 
@@ -8,19 +8,27 @@ class SamplesLoader
     samples = []
     IO.foreach(File.join(NN_ROOT, 'data', file)) do |line|
       text, category = line.chomp.split("\t")
-      data = SimpleMatrix.new(@vocabulary.size, 1)
-      @tokenizer.tokenize(text).inject(Hash.new(0)) do |h,word|
-        h[@vocabulary.to_id(word)] += 1
-        h
-      end.each do |word_id, word_count|
-        data.set(word_id, word_count)
+      data = SimpleMatrix.new(@embeddings.dimensions_count, 1)
+
+      h = Hash.new(0)
+      tokens = @tokenizer.tokenize(text).select { |word| @embeddings.include?(word) }
+      tokens.each do |word|
+        @embeddings.values(word).each_with_index do |v,i|
+          h[i] += v
+        end
       end
+
+      h.each do |k,v|
+        z = v / tokens.size
+        data.set(k,z)
+      end
+
       label = SimpleMatrix.new(2, 1)
       label.set(0, 0, category == 'SPORT' ? 1.0 : 0)
       label.set(1, 0, category == 'POLITIQUE' ? 1.0 : 0)
-      samples << Sample.new(data, label)
+      samples << Sample.new([category, text].join(' -- '), data, label)
     end
-    puts "load #{samples.size} samples from #{file}"
+    puts "loaded #{samples.size} samples from #{file}"
     samples
   end
 end

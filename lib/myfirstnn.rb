@@ -8,6 +8,7 @@ require "multi_json"
 require_relative 'myfirstnn/utils'
 require_relative 'myfirstnn/tokenizer'
 require_relative 'myfirstnn/vocabulary'
+require_relative 'myfirstnn/embeddings'
 
 require_relative 'myfirstnn/model_serializer'
 require_relative 'myfirstnn/backpropagation_task'

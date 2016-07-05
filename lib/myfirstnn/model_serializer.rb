@@ -8,7 +8,7 @@ class ModelSerializer
     }
 
     [
-      { size: nn.vocabulary.size, name: "input" },
+      { size: nn.vocabulary_size, name: "input" },
       { size: nn.hidden_layer_size, name: "hidden", weights: nn.w_hidden, biases: nn.b_hidden },
       { size: nn.output_layer_size, name: "output", weights: nn.w_output, biases: nn.b_output }
     ].each do |layer|

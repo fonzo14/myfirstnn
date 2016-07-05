@@ -1,7 +1,8 @@
 class Sample
-  attr_accessor :data, :label
+  attr_accessor :text, :data, :label
 
-  def initialize(data, label)
+  def initialize(text, data, label)
+    @text  = text
     @data  = data
     @label = label
   end

@@ -7,8 +7,12 @@ require 'myfirstnn'
 tokenizer = Tokenizer.new
 
 STDIN.each do |line|
+  #puts line
   words = tokenizer.tokenize(line)
-  words.each do |w|
-    puts w
+  if words.size > 2
+    #puts line
+    puts words.join(' ')
+    #puts "--------------------------"
   end
+  #puts "-------------------------------"
 end

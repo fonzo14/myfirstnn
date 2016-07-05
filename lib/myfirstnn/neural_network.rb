@@ -1,24 +1,28 @@
 java_import 'java.util.concurrent.Executors'
 
 class NeuralNetwork
-  attr_reader :vocabulary, :hidden_layer_size, :output_layer_size
+  attr_reader :vocabulary_size, :hidden_layer_size, :output_layer_size
   attr_reader :w_hidden, :b_hidden, :w_output, :b_output
 
-  def initialize(vocabulary_size, hidden_size, output_size)
-    # input layer size = vocabulary size
-    @vocabulary_size   = vocabulary_size
+  def initialize(hidden_size, output_size)
     @hidden_layer_size = hidden_size
     @output_layer_size = output_size
 
-    @vocabulary     = Vocabulary.new(1000, 5, File.join(NN_ROOT, 'data', 'vocabulary.txt'))
-    @samples_loader = SamplesLoader.new(@vocabulary, Tokenizer.new)
+    #@vocabulary     = Vocabulary.new(1000, 5, File.join(NN_ROOT, 'data', 'vocabulary.txt'))
+    @embeddings      = Embeddings.new(File.join(NN_ROOT, 'data', 'embeddings', 'word2vec-d300-mc5-w5.model.txt'))
+    # input layer size = vocabulary size
+    @vocabulary_size = @embeddings.dimensions_count
+
+    @samples_loader = SamplesLoader.new(@embeddings, Tokenizer.new)
 
     # init the weight and biais
-    @w_hidden = SimpleMatrix.random(@hidden_layer_size, @vocabulary.size, -1.0, 1.0, Random.new)
+    @w_hidden = SimpleMatrix.random(@hidden_layer_size, @vocabulary_size, -1.0, 1.0, Random.new)
     @b_hidden = SimpleMatrix.new(@hidden_layer_size, 1)
 
     @w_output = SimpleMatrix.random(@output_layer_size, @hidden_layer_size, -1.0, 1.0, Random.new)
     @b_output = SimpleMatrix.new(@output_layer_size, 1)
+
+    puts "neural network initialized"
   end
 
   def train(epochs, batch_size, learning_rate)
@@ -48,16 +52,21 @@ class NeuralNetwork
       # evaluate at the end of epoch
       evaluate(@samples_loader.load("train/evaluation.txt"))
     end
+
+    puts "training done"
   end
 
   def test
-    evaluate(@samples_loader.load("train/test.txt"))
+    evaluate(@samples_loader.load("train/test.txt"), { verbose: false })
+    puts "testing done"
   end
 
   def shutdown
-    @executor.shutdown
+    puts "shuting down"
     ser = ModelSerializer.new
     ser.save(self)
+    puts "model saved"
+    @executor.shutdown
   end
 
   private
@@ -67,7 +76,7 @@ class NeuralNetwork
     # init batch delta's
     batch_delta_w_output = SimpleMatrix.new(@output_layer_size, @hidden_layer_size)
     batch_delta_b_output = SimpleMatrix.new(@output_layer_size, 1)
-    batch_delta_w_hidden = SimpleMatrix.new(@hidden_layer_size, @vocabulary.size)
+    batch_delta_w_hidden = SimpleMatrix.new(@hidden_layer_size, @vocabulary_size)
     batch_delta_b_hidden = SimpleMatrix.new(@hidden_layer_size, 1)
 
     futures = samples.map do |sample|
@@ -125,11 +134,16 @@ class NeuralNetwork
     [delta_w_output, delta_b_output, delta_w_hidden, delta_b_hidden]
   end
 
-  def evaluate(samples)
+  def evaluate(samples, opts = {})
+    verbose = opts[:verbose]
     total_ok = 0
     samples.shuffle.each do |sample|
       if ok?(feedforward(sample.data), sample.label)
         total_ok += 1
+      else
+        if verbose
+          p [:error, sample.text]
+        end
       end
     end
     accuracy = total_ok.to_f / samples.size
