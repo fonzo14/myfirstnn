@@ -1,6 +1,6 @@
 NN_ROOT = File.join(File.dirname(__FILE__), '..')
 
-Dir["#{File.join(NN_ROOT, "lib", "java")}/*.jar"].each { |jar| require jar }
+Dir.glob("#{File.join(NN_ROOT, "lib", "java","**")}/*.jar").each { |jar| require jar }
 
 java_import 'org.ejml.simple.SimpleMatrix'
 java_import 'java.util.Random'
