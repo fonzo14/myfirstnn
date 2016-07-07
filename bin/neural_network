@@ -4,7 +4,7 @@ $LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'myfirstnn'
 
-nn = NeuralNetwork.new(50, 2)
-nn.train(20, 10, 0.025)
+nn = NeuralNetwork.new(1000, 2)
+nn.train(100, 10, 0.025)
 nn.test
 nn.shutdown
