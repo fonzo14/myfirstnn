@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+
+require 'elasticsearch'
+
+class Repository
+  def initialize
+    @client = Elasticsearch::Client.new log: false, url: "http://ec2-107-21-100-209.compute-1.amazonaws.com:9200"
+  end
+
+  def documents
+    body = {
+      query: {
+          filtered: {
+              query: {
+                  bool: {
+                      must: { range: { created_at: { gte: "now-3h" } } }
+                  }
+              }
+          }
+      }
+    }
+
+    r = @client.search index: 'flint', type: 'tweet', search_type: 'scan', scroll: '5m', size: 500, body: body
+
+    # Call the `scroll` API until empty results are returned
+    while r = @client.scroll(scroll_id: r['_scroll_id'], scroll: '5m') and not r['hits']['hits'].empty? do
+      puts "--- BATCH #{defined?($i) ? $i += 1 : $i = 1} -------------------------------------------------"
+      puts r['hits']['hits'].map { |d| d['_source']['text'] }.inspect
+      puts
+    end
+  end
+end
+
+Repository.new.documents

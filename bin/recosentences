@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+require 'multi_json'
+
+h = {}
+id2urls = {}
+
+STDIN.each_line do |line|
+  begin
+    doc = MultiJson.decode(line)
+
+    if doc['document'] && doc['tweet']
+      doc_id = doc['document']['id']
+      user   = doc['tweet']['user']['screen_name']
+
+      unless h.key?(doc_id)
+        id2urls[doc_id] = doc['document']['url']
+        h[doc_id] ||= []
+      end
+
+      h[doc_id] << user
+    end
+  rescue ::Exception => e
+  end
+end
+
+h.keys.each do |k|
+  h[k].uniq!
+end
+
+h.select! { |k,v| v.size > 1 }
+
+h.sort_by { |k,v| -v.size }.each do |(k,v)|
+  puts v.join(' ')
+end

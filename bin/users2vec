@@ -1,0 +1,66 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.join(File.dirname(__FILE__), '..', 'lib')
+
+NN_ROOT = File.join(File.dirname(__FILE__), '..')
+
+#Dir.glob("#{File.join(NN_ROOT, "lib", "java","**")}/*.jar").each { |jar| require jar }
+
+java_import "org.deeplearning4j.models.embeddings.loader.WordVectorSerializer"
+java_import "org.deeplearning4j.models.word2vec.Word2Vec"
+java_import "org.deeplearning4j.text.sentenceiterator.BasicLineIterator"
+java_import "org.deeplearning4j.text.sentenceiterator.SentenceIterator"
+java_import "org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory"
+java_import "org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory"
+
+java_import "org.deeplearning4j.plot.BarnesHutTsne"
+
+user2vec_file = File.join(NN_ROOT, "data", "reco", "user2vec.txt")
+model         = nil
+
+if File.exists?(user2vec_file)
+  model = WordVectorSerializer.loadTxtVectors(java.io.File.new(user2vec_file))
+else
+  corpus = File.join(NN_ROOT, "data", "reco", "user-sentences.txt")
+
+  sentence_iterator = BasicLineIterator.new(corpus)
+  tokenizer_factory = DefaultTokenizerFactory.new
+
+  model = Word2Vec::Builder.new
+                  .minWordFrequency(3)
+                  .iterations(1)
+                  .epochs(30)
+                  .layerSize(100)
+                  .seed(42)
+                  .windowSize(15)
+                  .iterate(sentence_iterator)
+                  .tokenizerFactory(tokenizer_factory)
+                  .build()
+
+  start = Time.now.to_f
+
+  model.fit
+
+  puts "trained in #{Time.now.to_f - start}"
+
+  WordVectorSerializer.writeWordVectors(model, user2vec_file)
+end
+
+model.wordsNearest('XavierNau', 25).each do |user|
+  puts user
+end
+
+#p model.similarity("DanWMedia", "benoitraphael")
+
+# tsne = BarnesHutTsne::Builder.new
+#             .setMaxIter(1000)
+#             .stopLyingIteration(250)
+#             .learningRate(500)
+#             .useAdaGrad(false)
+#             .theta(0.5)
+#             .setMomentum(0.5)
+#             .normalize(true)
+#             .usePca(false)
+#             .build()
+#
+# model.lookupTable().plotVocab(tsne, 3500, java.io.File.new(File.join(NN_ROOT, "data", "reco", "user2vec.tsne")))
