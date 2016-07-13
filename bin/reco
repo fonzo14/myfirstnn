@@ -116,8 +116,8 @@ click_stream.each do |url|
     users.each do |u1|
       _users.each do |u2|
         sim = user2vec.similarity(u1, u2)
-        if sim > 0
-          sim = sim ** 2.5
+        if true
+          sim = sim ** 5
         end
         doc_score += sim
       end
