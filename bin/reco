@@ -2,33 +2,133 @@
 
 require 'elasticsearch'
 
+java_import "org.deeplearning4j.models.embeddings.loader.WordVectorSerializer"
+java_import "org.deeplearning4j.models.word2vec.Word2Vec"
+
+NN_ROOT = File.join(File.dirname(__FILE__), '..')
+
 class Repository
   def initialize
     @client = Elasticsearch::Client.new log: false, url: "http://ec2-107-21-100-209.compute-1.amazonaws.com:9200"
   end
 
-  def documents
+  def tweets
     body = {
       query: {
           filtered: {
               query: {
                   bool: {
-                      must: { range: { created_at: { gte: "now-3h" } } }
+                      must: { range: { created_at: { gte: "now-20h" } } }
                   }
               }
           }
       }
     }
 
+    tweets = []
+
     r = @client.search index: 'flint', type: 'tweet', search_type: 'scan', scroll: '5m', size: 500, body: body
 
     # Call the `scroll` API until empty results are returned
     while r = @client.scroll(scroll_id: r['_scroll_id'], scroll: '5m') and not r['hits']['hits'].empty? do
-      puts "--- BATCH #{defined?($i) ? $i += 1 : $i = 1} -------------------------------------------------"
-      puts r['hits']['hits'].map { |d| d['_source']['text'] }.inspect
-      puts
+      tweets.concat(r['hits']['hits'].map { |d| d['_source'] })
     end
+
+    tweets
   end
 end
 
-Repository.new.documents
+class User2Vec
+  def initialize(file)
+    @model = WordVectorSerializer.loadTxtVectors(java.io.File.new(file))
+  end
+
+  def similarity(user1, user2)
+    s = 0.0
+    if (@model.indexOf(user1) > 0) && (@model.indexOf(user2) > 0)
+      s = @model.similarity(user1, user2)
+    end
+    s
+  end
+end
+
+class Documents
+  def initialize(file)
+    @documents = {}
+
+    IO.foreach(file) do |line|
+      id, url, *users = line.split(' ')
+      @documents[url] = users
+    end
+  end
+
+  def users(url)
+    @documents[url]
+  end
+end
+
+documents_file = File.join(NN_ROOT, "data", "reco", "docs.txt")
+documents      = Documents.new(documents_file)
+
+user2vec_file = File.join(NN_ROOT, "data", "reco", "user2vec.txt")
+user2vec      = User2Vec.new(user2vec_file)
+
+click_stream = [
+  "http://digiday.com/publishers/two-months-four-things-npr-learned-using-facebook-live",
+  "http://meta-media.fr/2016/06/30/la-nouvelle-economie-de-la-baladodiffusion.html",
+  "http://www.lemonde.fr/politique/article/2016/06/29/sarkozy-promet-de-revenir-sur-le-non-cumul-des-mandats-et-s-attire-des-critiques-a-droite_4960797_823448.html",
+  "http://www.theguardian.com/technology/2016/jul/05/google-deepmind-nhs-machine-learning-blindness",
+  "http://www.slate.fr/story/120889/thomas-dixon-twitter-amnesie-memoire-internet",
+  "http://www.liberation.fr/planete/2016/07/01/greenpeace-repond-a-l-appel-des-prix-nobel-pro-ogm_1463183",
+  "http://techcrunch.com/2016/07/09/pokemon-go-ar-hype-check",
+  "http://www.nytimes.com/2016/07/11/business/media/as-online-video-surges-publishers-turn-to-automation.html",
+  "http://www.atelier.net/trends/articles/enquete-vers-une-collaboration-entre-humains-machines-monde-travail_442069",
+  "http://www.marianne.net/les-casseurs-sont-instrumentalises-pouvoir-accuse-cgt-police-100243787.html",
+  "http://singularityhub.com/2016/06/17/long-promised-artificial-intelligence-is-looming-and-its-going-to-be-amazing",
+  "http://uxmag.com/articles/ux-trends-to-keep-in-mind-for-designing-in-2016",
+  "http://leplus.nouvelobs.com/contribution/1527186-les-etudiants-de-grandes-ecoles-s-approprient-le-doctorat-juste-pour-leur-carte-de-visite.html"
+]
+
+tweets = Repository.new.tweets
+
+docs = {}
+doc_users = {}
+
+tweets.each do |tweet|
+  doc  = tweet['document']
+  user = tweet['user']
+
+  docs[doc['id']] = doc
+  unless doc_users.key?(doc['id'])
+    doc_users[doc['id']] = []
+  end
+
+  doc_users[doc['id']] << user['screen_name']
+end
+
+click_stream.each do |url|
+  users = documents.users(url)
+
+  doc_scores = {}
+
+  doc_users.each do |doc_id,_users|
+    doc_score = 0.0
+    users.each do |u1|
+      _users.each do |u2|
+        sim = user2vec.similarity(u1, u2)
+        if sim > 0
+          sim = sim ** 2.5
+        end
+        doc_score += sim
+      end
+    end
+    doc_score = doc_score / users.size
+    doc_scores[doc_id] = doc_score
+  end
+
+  p "-----------------------"
+  p url
+  doc_scores.sort_by { |k,v| -v }.first(7).each do |(k,v)|
+    p [v, doc_users[k].size, v / doc_users[k].size, docs[k]['title'], docs[k]['url']]
+  end
+end
