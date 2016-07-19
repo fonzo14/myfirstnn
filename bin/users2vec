@@ -29,10 +29,10 @@ else
   model = Word2Vec::Builder.new
                   .minWordFrequency(3)
                   .iterations(1)
-                  .epochs(30)
+                  .epochs(10)
                   .layerSize(100)
                   .seed(42)
-                  .windowSize(15)
+                  .windowSize(25)
                   .iterate(sentence_iterator)
                   .tokenizerFactory(tokenizer_factory)
                   .build()
@@ -46,8 +46,15 @@ else
   WordVectorSerializer.writeWordVectors(model, user2vec_file)
 end
 
-model.wordsNearest('XavierNau', 25).each do |user|
-  puts user
+
+sources = {}
+IO.foreach "data/reco/sources.txt" do |l|
+  screen_name, tags = l.chomp.split("\t")
+  sources[screen_name.downcase] = tags.split(',')
+end
+
+model.wordsNearest('toto_flint', 50).each do |screen_name|
+ p [screen_name, sources[screen_name.downcase]]
 end
 
 #p model.similarity("DanWMedia", "benoitraphael")

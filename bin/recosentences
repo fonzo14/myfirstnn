@@ -4,6 +4,13 @@ require 'multi_json'
 
 h = {}
 id2urls = {}
+urls2id = {}
+
+sources = {}
+IO.foreach "data/reco/sources.txt" do |l|
+  screen_name, tags = l.chomp.split("\t")
+  sources[screen_name.downcase] = tags.split(',')
+end
 
 STDIN.each_line do |line|
   begin
@@ -13,12 +20,15 @@ STDIN.each_line do |line|
       doc_id = doc['document']['id']
       user   = doc['tweet']['user']['screen_name']
 
-      unless h.key?(doc_id)
-        id2urls[doc_id] = doc['document']['url']
-        h[doc_id] ||= []
-      end
+      if sources.key?(user.downcase)
+        unless h.key?(doc_id)
+          id2urls[doc_id] = doc['document']['url']
+          urls2id[doc['document']['url']] = doc_id
+          h[doc_id] ||= []
+        end
 
-      h[doc_id] << user
+        h[doc_id] << user
+      end
     end
   rescue ::Exception => e
   end
@@ -26,6 +36,30 @@ end
 
 h.keys.each do |k|
   h[k].uniq!
+end
+
+click_stream = [
+  "http://digiday.com/publishers/two-months-four-things-npr-learned-using-facebook-live",
+  "http://meta-media.fr/2016/06/30/la-nouvelle-economie-de-la-baladodiffusion.html",
+  "http://www.lemonde.fr/politique/article/2016/06/29/sarkozy-promet-de-revenir-sur-le-non-cumul-des-mandats-et-s-attire-des-critiques-a-droite_4960797_823448.html",
+  "http://www.theguardian.com/technology/2016/jul/05/google-deepmind-nhs-machine-learning-blindness",
+  "http://www.slate.fr/story/120889/thomas-dixon-twitter-amnesie-memoire-internet",
+  "http://www.liberation.fr/planete/2016/07/01/greenpeace-repond-a-l-appel-des-prix-nobel-pro-ogm_1463183",
+  "http://techcrunch.com/2016/07/09/pokemon-go-ar-hype-check",
+  "http://www.nytimes.com/2016/07/11/business/media/as-online-video-surges-publishers-turn-to-automation.html",
+  "http://www.atelier.net/trends/articles/enquete-vers-une-collaboration-entre-humains-machines-monde-travail_442069",
+  "http://www.marianne.net/les-casseurs-sont-instrumentalises-pouvoir-accuse-cgt-police-100243787.html",
+  "http://singularityhub.com/2016/06/17/long-promised-artificial-intelligence-is-looming-and-its-going-to-be-amazing",
+  "http://uxmag.com/articles/ux-trends-to-keep-in-mind-for-designing-in-2016",
+  "http://leplus.nouvelobs.com/contribution/1527186-les-etudiants-de-grandes-ecoles-s-approprient-le-doctorat-juste-pour-leur-carte-de-visite.html",
+  "http://www.lequipe.fr/explore-video/islande-tout-sauf-un-miracle"
+]
+
+click_stream.each do |url|
+  if doc_id = urls2id[url]
+    h[doc_id] ||= []
+    h[doc_id] << "toto_flint"
+  end
 end
 
 h.select! { |k,v| v.size > 1 }

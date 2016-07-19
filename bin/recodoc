@@ -5,6 +5,12 @@ require 'multi_json'
 h = {}
 id2urls = {}
 
+sources = {}
+IO.foreach "data/reco/sources.txt" do |l|
+  screen_name, tags = l.chomp.split("\t")
+  sources[screen_name.downcase] = tags.split(',')
+end
+
 STDIN.each_line do |line|
   begin
     doc = MultiJson.decode(line)
@@ -13,12 +19,14 @@ STDIN.each_line do |line|
       doc_id = doc['document']['id']
       user   = doc['tweet']['user']['screen_name']
 
-      unless h.key?(doc_id)
-        id2urls[doc_id] = doc['document']['url']
-        h[doc_id] ||= []
-      end
+      if sources.key?(user.downcase)
+        unless h.key?(doc_id)
+          id2urls[doc_id] = doc['document']['url']
+          h[doc_id] ||= []
+        end
 
-      h[doc_id] << user
+        h[doc_id] << user
+      end
     end
   rescue ::Exception => e
   end
