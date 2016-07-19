@@ -1,0 +1,108 @@
+#!/usr/bin/env ruby
+
+require 'multi_json'
+
+h = {}
+id2urls = {}
+urls2id = {}
+
+sources = {}
+IO.foreach "data/reco/sources.txt" do |l|
+  screen_name, tags = l.chomp.split("\t")
+  sources[screen_name.downcase] = tags.split(',')
+end
+
+STDIN.each_line do |line|
+  begin
+    doc = MultiJson.decode(line)
+
+    if doc['document'] && doc['tweet']
+      doc_id = doc['document']['id']
+      user   = doc['tweet']['user']['screen_name']
+
+      if sources.key?(user.downcase)
+        unless h.key?(doc_id)
+          id2urls[doc_id] = doc['document']['url']
+          urls2id[doc['document']['url']] = doc_id
+          h[doc_id] ||= []
+        end
+
+        h[doc_id] << user
+
+        if doc['tweet']['retweeted_tweet']
+          h[doc_id] << doc['tweet']['retweeted_tweet']['user']['screen_name']
+        end
+      end
+    end
+  rescue ::Exception => e
+  end
+end
+
+h.keys.each do |k|
+  h[k].uniq!
+end
+
+_x_jobs_click_stream = [
+  "http://medium.com/the-wtf-economy/dont-replace-people-augment-them-8bea60cb80ac",
+  "http://www.forbes.com/sites/sap/2016/07/18/will-robots-kill-jobs",
+  "http://theconversation.com/robots-dont-just-take-jobs-they-can-help-a-new-business-grow-58867",
+  "http://www.fastcompany.com/3061515/the-scientific-reason-why-coworking-may-be-the-future-of-work",
+  "http://www.huffingtonpost.com/moises-naim/robots-jobs-universal-income_b_10997120.html",
+  "http://fortune.com/2016/07/12/artificial-intelligence-job",
+  "http://www.theguardian.com/sustainable-business/2016/jul/16/robot-factories-threaten-jobs-millions-garment-workers-south-east-asia-women",
+  "http://www.techrepublic.com/article/new-report-says-physical-and-predictable-jobs-are-at-risk-of-automation-ai-experts-respond",
+  "http://www.bbc.com/capital/story/20160714-is-full-time-work-bad-for-our-brains",
+  "http://www.brookings.edu/blogs/techtank/posts/2015/09/30-minimum-wage-and-automation",
+  "http://www.fastcompany.com/3046429/the-new-rules-of-work/the-highest-paying-jobs-of-the-future-will-eat-your-life",
+  "http://www.inc.com/seth-goldman/honestly-cheap-5-ways-to-promote-wellness-in-the-workplace.html",
+  "http://fortune.com/future-work-jobs-industries",
+  "http://www.foreignaffairs.com/articles/2016-06-13/human-work-robotic-future",
+  "http://www.forbes.com/sites/jeannemeister/2016/07/06/future-of-work-three-ways-to-prepare-for-the-impact-of-intelligent-technologies-in-your-workplace",
+  "http://www.slate.com/articles/technology/future_tense/2016/06/microsoft_ceo_satya_nadella_humans_and_a_i_can_work_together_to_solve_society.html",
+  "http://www.fastcompany.com/3061567/the-future-of-work/more-people-work-from-home-now-than-ever-before",
+  "http://www.marginalia.online/the-robots-are-coming-the-future-of-work",
+  "http://www.talentmgt.com/2016/07/06/the-future-of-work-and-artificial-intelligence",
+  "http://www.pewinternet.org/2016/03/10/public-predictions-for-the-future-of-workforce-automation",
+  "http://uk.businessinsider.com/clsa-wef-and-citi-on-the-future-of-robots-and-ai-in-the-workforce-2016-6",
+  "http://www.fastcompany.com/3061253/the-future-of-work/whats-holding-the-us-back-from-achieving-gender-equality",
+  "http://techbeacon.com/internet-everything-future-work-interview-fccs-david-bray",
+  "http://talenteconomy.io/the-future-of-work-and-artificial-intelligence",
+  "http://futurism.com/why-finland-is-able-to-implement-a-basic-income-experiment",
+  "http://blogs.wsj.com/economics/2016/07/07/top-white-house-economist-dismisses-the-idea-of-a-universal-basic-income",
+  "http://www.inverse.com/article/17895-universal-basic-income-will-solve-automation",
+  "http://www.wsj.com/articles/revival-of-universal-basic-income-proposal-ignores-needs-of-labor-force-1468429793",
+  "http://www.vox.com/2016/7/16/11948800/robert-greenstein-basic-income",
+  "http://medium.com/basic-income/why-basic-income-is-good-for-business-4305b7bf6a4a",
+  "http://www.independent.co.uk/news/world/americas/universal-basic-income-to-be-trialled-in-oakland-y-combinator-announces-a7061191.html"
+]
+
+_x_jobs_click_stream.each do |url|
+  if doc_id = urls2id[url]
+    h[doc_id] ||= []
+    h[doc_id] << "flint_jobs_x"
+  end
+end
+
+_x_environment_click_stream = [
+  "http://www.washingtonpost.com/news/energy-environment/wp/2016/07/18/this-could-do-more-to-save-the-planet-this-year-than-any-other-action",
+  "http://www.fastcoexist.com/3059579/a-terrifying-photo-collection-shows-how-climate-change-is-destroying-the-planet-right-now",
+  "http://www.climaterealityproject.org/blog/our-land-our-climate-our-future",
+  "https://www.youtube.com/watch?v=beU_jVf-Z14",
+  "http://www.huffingtonpost.com/maria-damanaki/whats-the-future-of-ocean_b_10317924.html",
+  "http://www.climaterealityproject.org/training",
+  "http://www.npr.org/2016/05/06/476490640/should-we-feel-optimistic-about-climate-change",
+  "http://www.huffingtonpost.com/desmond-tutu/post_12240_b_10393790.html"
+]
+
+_x_environment_click_stream.each do |url|
+  if doc_id = urls2id[url]
+    h[doc_id] ||= []
+    h[doc_id] << "flint_environment_x"
+  end
+end
+
+h.select! { |k,v| v.size > 1 }
+
+h.sort_by { |k,v| -v.size }.each do |(k,v)|
+  puts v.join(' ')
+end

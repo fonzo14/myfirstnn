@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+require 'multi_json'
+require 'time'
+
+user_document_counts = Hash.new(0)
+user_first_tweet     = Hash.new
+last_tweet           = nil
+user_tweets_per_day  = {}
+
+STDIN.each_line do |line|
+  begin
+    doc = MultiJson.decode(line)
+
+    if doc['document'] && doc['tweet']
+      doc_id = doc['document']['id']
+      user   = doc['tweet']['user']['screen_name']
+
+      created_at = Time.parse(doc['tweet']['created_at'])
+
+      last_tweet = created_at if (last_tweet.nil? || created_at > last_tweet)
+      user_first_tweet[user] = created_at if (user_first_tweet[user].nil? || created_at < user_first_tweet[user])
+      user_document_counts[user] += 1
+    end
+  rescue ::Exception => e
+  end
+end
+
+user_first_tweet.sort_by { |k,v| -v.to_i }.each do |(k,v)|
+  tweets_per_day = user_document_counts[k].to_f / ((last_tweet - v).to_f / 86400)
+  user_tweets_per_day[k] = tweets_per_day
+end
+
+user_tweets_per_day.sort_by { |k,v| -v }.each do |(k,v)|
+  puts [k, v, user_document_counts[k], user_first_tweet[k], (last_tweet - user_first_tweet[k]).to_f / 86400].join "|"
+end

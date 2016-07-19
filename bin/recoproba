@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+ #sort -k6 -n -r -t$'\t' /tmp/rp.txt | head -n 50
+
+users = Hash.new(0)
+user_urls = {}
+url_users = {}
+
+IO.foreach("data/reco/docs.txt") do |line|
+  doc_id, doc_url, *_users = line.chomp.split " "
+  unless doc_url.include?("twitter.com")
+    _users.each do |u|
+      users[u] += 1
+    end
+  end
+end
+
+#let's remove the 10% more and less noisy users
+interval = (users.size * 0.1).to_i
+users    = Hash[*users.sort_by { |u,c| -c }[interval..-interval].flatten]
+
+IO.foreach("data/reco/docs.txt") do |line|
+  doc_id, doc_url, *_users = line.chomp.split " "
+
+  unless doc_url.include?("twitter.com")
+    _users.select { |u| users.key?(u) }.each do |u|
+      user_urls[u] = [] unless user_urls.key?(u)
+      user_urls[u] << doc_url
+    end
+
+    url_users[doc_url] = _users.select { |u| users.key?(u) }
+  end
+end
+
+url_proba = {}
+
+url_users.sort_by { |k,v| -v.size }.each do |(url, _users)|
+  url_proba[url] = _users.size.to_f / users.size
+end
+
+url_users_a = url_users.select { |k,v| v.size > 4 }.to_a.sample(1000)
+
+url_users_a.each_with_index do |(u1,_users1),i|
+  url_users_a.each_with_index do |(u2, _users2),j|
+    if j > i
+      if u1[0..10] != u2[0..10]
+        users_u1_u2 = (url_users[u1] & url_users[u2]).size
+        proba_u1_and_u2 = users_u1_u2.to_f / users.size
+        p1 = proba_u1_and_u2 / url_proba[u1]
+        p2 = (url_users[u2].size - users_u1_u2) / (1 - url_proba[u1])
+        puts [u1, u2, (p1 / p2)].join "\t"
+      end
+    end
+  end
+end

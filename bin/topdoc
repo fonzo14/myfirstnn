@@ -1,0 +1,87 @@
+#!/usr/bin/env ruby
+
+NN_ROOT = File.join(File.dirname(__FILE__), '..')
+
+class Repository
+  def initialize
+  end
+
+  def items
+    items = []
+
+    IO.foreach(File.join(::NN_ROOT, "data/reco/tweets.txt")) do |line|
+      doc_id, doc_title, doc_url, doc_domain, screen_name = line.chomp.split("\t")
+
+      items << ({
+        id: doc_id.to_i,
+        title: doc_title,
+        url: doc_url,
+        screen_name: screen_name,
+        domain: doc_domain
+      })
+    end
+
+    items
+  end
+end
+
+user_scores = {}
+
+userstats_file = File.join(::NN_ROOT, "data", "reco", "userstats.txt")
+
+IO.foreach(userstats_file) do |l|
+  screen_name, docs_per_day, cc,  ft, days = l.chomp.split('|')
+  #user_scores[screen_name] = [25 / docs_per_day.to_f, 1.0].min
+  #user_scores[screen_name] = [2.5 / docs_per_day.to_f, 1.0].min
+  user_scores[screen_name] = 1.0
+end
+
+items = Repository.new.items
+
+docs      = {}
+doc_users = {}
+doc_scores = {}
+
+items.each do |item|
+  docs[item[:id]] = item
+  unless doc_users.key?(item[:id])
+    doc_users[item[:id]] = []
+    doc_scores[item[:id]] = 0.0
+  end
+
+  doc_users[item[:id]] << item[:screen_name]
+  doc_scores[item[:id]] += user_scores[item[:screen_name]].to_f
+end
+
+domain_stats = {}
+doc_scores.sort_by { |k,v| -v }.each do |(doc_id,doc_score)|
+  url    = docs[doc_id][:url]
+  domain = docs[doc_id][:domain]
+
+  domain_stats[domain] = {urls: {}, count: 0, total_score: 0.0} unless domain_stats[domain]
+  unless domain_stats[domain][:urls].key?(url)
+    domain_stats[domain][:urls][url] = domain_stats[domain][:urls].size
+    domain_stats[domain][:count] += 1
+  end
+
+  domain_stats[domain][:total_score] += doc_score
+end
+
+best_score = doc_scores.sort_by { |k,v| -v }.first[1]
+
+doc_scores.sort_by { |k,v| -v }.each do |(doc_id,doc_score)|
+  domain               = docs[doc_id][:domain]
+  percent_score_domain = 0.25
+  if domain_stats[domain][:total_score] > 0
+    percent_score_domain = doc_score.to_f / domain_stats[domain][:total_score]
+  end
+
+  doc_scores[doc_id] = (doc_score**0.75) + (percent_score_domain*doc_score)
+end
+
+doc_scores.sort_by { |k,v| -v }.each_with_index do |(doc_id,doc_score),i|
+  ds              = domain_stats[docs[doc_id][:domain]]
+  url             = docs[doc_id][:url]
+  domain_position = ds[:urls][url]
+  p [i,doc_score, docs[doc_id][:url], doc_users[doc_id].size, ds[:count], ds[:total_score], ds[:total_score].to_f / ds[:count], domain_position]
+end
